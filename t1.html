@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZAA Carpets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyASvMNPHGtyhKJPUeUZ51u_INGghOIzJzU",
+    authDomain: "zaa-carpets.firebaseapp.com",
+    databaseURL: "https://zaa-carpets-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "zaa-carpets",
+    storageBucket: "zaa-carpets.firebasestorage.app",
+    messagingSenderId: "482118963429",
+    appId: "1:482118963429:web:4cd2f920651076dc41040c",
+    measurementId: "G-B04Y4CHCJP"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getDatabase(fbApp);
+
+  // Expose a small bridge so the regular (non-module) script below can use Firebase.
+  window.__firebase = { db, ref, set, remove, onValue };
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<style>
+  :root {
+    --ink: #1B2230;
+    --ink-soft: #4A5468;
+    --parchment: #F7F8FA;
+    --parchment-dim: #ECEEF2;
+    --carpet-red: #1F3A5F;
+    --carpet-red-dim: #3D5A80;
+    --gold: #A9842C;
+    --gold-soft: #EFE3C2;
+    --sage: #4F6F64;
+    --sage-soft: #DCE6E2;
+    --border: #DCE0E6;
+    --border-soft: #E9EBEF;
+    --danger: #B3261E;
+    --shadow: 0 2px 8px rgba(20, 26, 38, 0.06);
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--parchment);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .num {
+    font-family: 'Roboto Slab', serif;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ===== Layout shell ===== */
+  .shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--ink);
+    color: var(--parchment-dim);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  /* ===== Mobile top bar (hidden on desktop, hidden until app ready) ===== */
+  .mobile-topbar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--ink);
+    color: var(--parchment);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+  .mobile-topbar .brand-name { font-size: 15.5px; color: var(--parchment); }
+  .mobile-topbar .brand-sub { margin-left: 0; font-size: 10px; }
+
+  /* ===== Mobile bottom tab bar (hidden on desktop, hidden until app ready) ===== */
+  .bottom-tabs {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--ink);
+    border-top: 1px solid rgba(250,246,238,0.1);
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    z-index: 50;
+    justify-content: space-around;
+  }
+
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    color: rgba(250,246,238,0.55);
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    flex: 1;
+    min-height: 52px;
+    justify-content: center;
+  }
+  .tab-item svg { width: 21px; height: 21px; }
+  .tab-item.active { color: var(--carpet-red-dim); }
+  .tab-item.active svg { stroke: var(--carpet-red-dim); }
+
+  .brand {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid rgba(250, 246, 238, 0.12);
+    margin-bottom: 8px;
+  }
+
+  .brand-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .brand-name {
+    font-family: 'Roboto Slab', serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--parchment);
+    letter-spacing: 0.01em;
+  }
+
+  .brand-sub {
+    font-size: 11px;
+    color: var(--gold-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-left: 38px;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+    gap: 2px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: var(--radius);
+    color: rgba(250, 246, 238, 0.72);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+    border: none;
+    background: none;
+    text-align: left;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .nav-item:hover {
+    background: rgba(250, 246, 238, 0.06);
+    color: var(--parchment);
+  }
+
+  .nav-item.active {
+    background: var(--carpet-red);
+    color: #fff;
+  }
+
+  .nav-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.9;
+  }
+
+  .nav-footer {
+    margin-top: auto;
+    padding: 16px 24px 0;
+    border-top: 1px solid rgba(250, 246, 238, 0.12);
+    font-size: 11px;
+    color: rgba(250, 246, 238, 0.4);
+    line-height: 1.6;
+  }
+
+  /* ===== Main area ===== */
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 32px 40px 64px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .page-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .page-sub {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    opacity: 0.75;
+  }
+
+  .topbar-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Buttons ===== */
+  .btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 9px 16px;
+    min-height: 40px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--ink);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .btn:hover { border-color: var(--ink-soft); background: var(--parchment-dim); }
+
+  .btn-primary {
+    background: var(--carpet-red);
+    border-color: var(--carpet-red);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #16293F; border-color: #16293F; }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--ink-soft);
+    padding: 9px 10px;
+  }
+  .btn-ghost:hover { background: var(--parchment-dim); }
+
+  .btn-sm { padding: 6px 11px; font-size: 12.5px; }
+
+  .btn-danger-text { color: var(--danger); }
+
+  input[type="file"] { display: none; }
+
+  /* ===== Stat cards ===== */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .stat-label {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    opacity: 0.7;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .stat-value {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+
+  .stat-value.accent-red { color: var(--danger); }
+  .stat-value.accent-sage { color: var(--sage); }
+  .stat-value.accent-gold { color: var(--gold); }
+
+  .stat-detail {
+    font-size: 12px;
+    color: var(--ink-soft);
+    opacity: 0.65;
+    margin-top: 6px;
+  }
+
+  /* ===== Panel / table wrapper ===== */
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .panel-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  select, .text-input {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--ink);
+  }
+
+  select:focus, .text-input:focus, textarea:focus {
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    opacity: 0.65;
+    font-weight: 600;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 13.5px;
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--parchment-dim); }
+
+  .swatch {
+    width: 34px;
+    height: 22px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .item-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .item-name { font-weight: 600; }
+  .item-meta { font-size: 11.5px; color: var(--ink-soft); opacity: 0.65; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+
+  .badge-sage { background: var(--sage-soft); color: #4A5740; }
+  .badge-sage .badge-dot { background: var(--sage); }
+
+  .badge-gold { background: var(--gold-soft); color: #7A5F23; }
+  .badge-gold .badge-dot { background: var(--gold); }
+
+  .badge-red { background: #FBE4E1; color: var(--danger); }
+  .badge-red .badge-dot { background: var(--danger); }
+
+  .badge-gray { background: #E7E9ED; color: #5A6477; }
+  .badge-gray .badge-dot { background: #9AA3B2; }
+
+  .row-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s ease; }
+  tbody tr:hover .row-actions { opacity: 1; }
+
+  .icon-btn {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .icon-btn:hover { background: var(--parchment-dim); }
+  .icon-btn svg { width: 14px; height: 14px; }
+
+  .qty-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .qty-btn {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+  }
+  .qty-btn:hover { background: var(--parchment-dim); border-color: var(--ink-soft); }
+  .qty-btn:active { background: var(--border-soft); }
+  .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .qty-value { min-width: 20px; text-align: center; display: inline-block; }
+
+  .empty-state {
+    padding: 56px 24px;
+    text-align: center;
+  }
+
+  .empty-state .icon {
+    width: 44px; height: 44px;
+    margin: 0 auto 14px;
+    opacity: 0.3;
+  }
+
+  .empty-state-title {
+    font-family: 'Roboto Slab', serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .empty-state-sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    opacity: 0.7;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .right { text-align: right; }
+  .nowrap { white-space: nowrap; }
+
+  /* ===== Modal ===== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(28, 26, 23, 0.45);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 100;
+    padding: 48px 20px;
+    overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--parchment);
+    border-radius: 10px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+  }
+
+  .modal-head {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title { font-size: 16px; font-weight: 600; }
+
+  .modal-body { padding: 20px 24px; }
+  .modal-foot {
+    padding: 16px 24px 22px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .field { flex: 1; }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  .field input, .field select, .field textarea {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--ink);
+  }
+
+  .field textarea { resize: vertical; min-height: 60px; }
+
+  .modal-error {
+    background: #FBE4E1;
+    color: #B3261E;
+    font-size: 12.5px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    display: none;
+  }
+  .modal-error.show { display: block; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sage); flex-shrink: 0; }
+  .toast.error .toast-dot { background: var(--carpet-red-dim); }
+
+  .loading-screen {
+    position: fixed; inset: 0;
+    background: var(--parchment);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 999;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .loading-text { font-size: 13px; color: var(--ink-soft); font-family: 'Inter', sans-serif; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .csv-help {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    opacity: 0.65;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .csv-help code {
+    background: var(--parchment-dim);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  ::placeholder { color: #9AA2B0; }
+
+  @media (max-width: 880px) {
+    .shell { flex-direction: column; }
+    .sidebar { display: none; }
+    body.app-ready .mobile-topbar { display: flex; }
+    body.app-ready .bottom-tabs { display: flex; }
+
+    .main {
+      padding: 16px 14px calc(84px + env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .page-title { font-size: 21px; }
+    .page-sub { font-size: 12.5px; }
+
+    .topbar-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .topbar-actions .btn {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .stat-row {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .stat-card { padding: 14px 14px; }
+    .stat-value { font-size: 21px; }
+    .stat-label { font-size: 10.5px; }
+
+    .panel-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filter-row { width: 100%; }
+    .filter-row select, .filter-row .text-input {
+      flex: 1;
+      min-width: 0;
+    }
+    #invSearch, #paySearch, #saleSearch { width: 100% !important; }
+
+    /* Tables become stacked cards on mobile */
+    table, thead, tbody, th, td, tr { display: block; width: 100%; }
+    thead { display: none; }
+    tbody tr {
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      margin: 10px 0;
+      padding: 4px 0;
+      background: #fff;
+    }
+    tbody tr:hover { background: #fff; }
+    tbody td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border-soft);
+      text-align: right;
+      gap: 10px;
+    }
+    tbody td:last-child { border-bottom: none; }
+    tbody td.right { text-align: right; }
+    tbody td::before {
+      content: attr(data-label);
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-soft);
+      opacity: 0.6;
+      text-align: left;
+      flex-shrink: 0;
+    }
+    /* First cell (name/title) styled as card header, no label */
+    tbody td:first-child {
+      background: var(--parchment-dim);
+      border-radius: 7px 7px 0 0;
+      justify-content: flex-start;
+    }
+    tbody td:first-child::before { content: none; }
+    .item-name-cell { width: 100%; }
+
+    /* Actions row full width at bottom of card */
+    tbody td:last-child {
+      justify-content: flex-end;
+    }
+    .row-actions { opacity: 1; }
+
+    .empty-state { padding: 40px 16px; }
+
+    /* Modal becomes bottom sheet */
+    .modal-overlay {
+      align-items: flex-end;
+      padding: 0;
+    }
+    .modal {
+      max-width: 100%;
+      border-radius: 16px 16px 0 0;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: sheetUp 0.22s ease;
+    }
+    @keyframes sheetUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .field-row { flex-direction: column; gap: 0; }
+    .field input, .field select, .field textarea {
+      font-size: 16px; /* prevents iOS auto-zoom on focus */
+      padding: 11px 12px;
+    }
+    .modal-foot {
+      flex-direction: column-reverse;
+      gap: 8px;
+    }
+    .modal-foot .btn { width: 100%; justify-content: center; }
+
+    .toast {
+      bottom: calc(76px + env(safe-area-inset-bottom));
+      max-width: calc(100% - 32px);
+    }
+  }
+
+  @media (max-width: 380px) {
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .topbar-actions { grid-template-columns: 1fr; }
+  }
+
+  *:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-text">Opening the ledger…</div>
+</div>
+
+<!-- MOBILE TOP BAR -->
+<div class="mobile-topbar" id="mobileTopbar">
+  <div>
+    <div class="brand-name" style="line-height:1.1;">ZAA Carpets</div>
+    <div class="brand-sub">Trade Ledger</div>
+  </div>
+</div>
+
+<div class="shell" id="appShell" style="display:none;">
+
+  <!-- SIDEBAR (desktop) -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="brand-name">ZAA Carpets</div>
+      </div>
+      <div class="brand-sub">Trade Ledger</div>
+    </div>
+    <nav class="nav">
+      <button class="nav-item active" data-view="inventory">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
+        <span class="label">Inventory</span>
+      </button>
+      <button class="nav-item" data-view="payments">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+        <span class="label">Payments Due</span>
+      </button>
+      <button class="nav-item" data-view="sales">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+        <span class="label">Sales History</span>
+      </button>
+    </nav>
+    <div class="nav-footer">
+      Data is stored privately and only visible to you and your staff on this dashboard.
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ===================== INVENTORY VIEW ===================== -->
+
+    <section class="view active" id="view-inventory">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Inventory</div>
+          <div class="page-sub">Stock across the warehouse</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn" id="invImportBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+            Import CSV
+          </button>
+          <input type="file" id="invCsvInput" accept=".csv">
+          <button class="btn btn-primary" id="invAddBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add Carpet
+          </button>
+        </div>
+      </div>
+
+      <div class="stat-row" id="invStats"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Stock list</div>
+          <div class="filter-row">
+            <select id="invWarehouseFilter">
+              <option value="all">All stock</option>
+              <option value="Warehouse">Warehouse</option>
+            </select>
+            <input class="text-input" id="invSearch" placeholder="Search carpets…" style="width:180px;">
+          </div>
+        </div>
+        <div id="invTableWrap"></div>
+      </div>
+    </section>
+
+    <!-- ===================== PAYMENTS VIEW ===================== -->
+    <section class="view" id="view-payments">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Payments Due</div>
+          <div class="page-sub">Who owes what, and when it's due</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn" id="payImportBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+            Import CSV
+          </button>
+          <input type="file" id="payCsvInput" accept=".csv">
+          <button class="btn btn-primary" id="payAddBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add Entry
+          </button>
+        </div>
+      </div>
+
+      <div class="stat-row" id="payStats"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Outstanding & settled</div>
+          <div class="filter-row">
+            <select id="payStatusFilter">
+              <option value="all">All status</option>
+              <option value="pending">Pending</option>
+              <option value="partial">Partially paid</option>
+              <option value="paid">Paid</option>
+            </select>
+            <input class="text-input" id="paySearch" placeholder="Search by name…" style="width:180px;">
+          </div>
+        </div>
+        <div id="payTableWrap"></div>
+      </div>
+    </section>
+
+    <!-- ===================== SALES VIEW ===================== -->
+    <section class="view" id="view-sales">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Sales History</div>
+          <div class="page-sub">Full order log, newest first</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn" id="saleImportBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+            Import CSV
+          </button>
+          <input type="file" id="saleCsvInput" accept=".csv">
+          <button class="btn btn-primary" id="saleAddBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add Sale
+          </button>
+        </div>
+      </div>
+
+      <div class="stat-row" id="saleStats"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Orders</div>
+          <div class="filter-row">
+            <select id="saleStatusFilter">
+              <option value="all">All status</option>
+              <option value="delivered">Delivered</option>
+              <option value="processing">Processing</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <input class="text-input" id="saleSearch" placeholder="Search order, buyer, carpet…" style="width:200px;">
+          </div>
+        </div>
+        <div id="saleTableWrap"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MOBILE BOTTOM TAB BAR -->
+<nav class="bottom-tabs" id="bottomTabs">
+  <button class="tab-item active" data-view="inventory">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
+    Inventory
+  </button>
+  <button class="tab-item" data-view="payments">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+    Payments
+  </button>
+  <button class="tab-item" data-view="sales">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+    Sales
+  </button>
+</nav>
+
+<!-- ===================== MODALS ===================== -->
+
+<!-- Inventory modal -->
+<div class="modal-overlay" id="invModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="invModalTitle">Add carpet</div>
+      <button class="icon-btn" data-close="invModalOverlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-error" id="invModalError"></div>
+      <input type="hidden" id="invId">
+      <div class="field">
+        <label for="invName">Carpet name / design</label>
+        <input id="invName" placeholder="e.g. Royal Maroon Wedding Runner">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="invWarehouse">Warehouse</label>
+          <select id="invWarehouse">
+            <option>Warehouse</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="invQty">Quantity in stock</label>
+          <input id="invQty" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="invSize">Size</label>
+          <input id="invSize" placeholder="e.g. 20x60 ft">
+        </div>
+        <div class="field">
+          <label for="invPrice">Price per unit (₹)</label>
+          <input id="invPrice" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="field">
+        <label for="invColor">Primary color (for swatch)</label>
+        <input id="invColor" type="color" value="#A23B2E" style="height:38px; padding:4px; cursor:pointer;">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="invModalOverlay">Cancel</button>
+      <button class="btn btn-primary" id="invSaveBtn">Save carpet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payments modal -->
+<div class="modal-overlay" id="payModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="payModalTitle">Add payment entry</div>
+      <button class="icon-btn" data-close="payModalOverlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-error" id="payModalError"></div>
+      <input type="hidden" id="payId">
+      <div class="field">
+        <label for="payName">Customer / party name</label>
+        <input id="payName" placeholder="e.g. Mehta Wedding Planners">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="payTotal">Total amount (₹)</label>
+          <input id="payTotal" type="number" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label for="payReceived">Amount received (₹)</label>
+          <input id="payReceived" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="payDue">Due date</label>
+          <input id="payDue" type="date">
+        </div>
+        <div class="field">
+          <label for="payPhone">Phone (optional)</label>
+          <input id="payPhone" placeholder="+91…">
+        </div>
+      </div>
+      <div class="field">
+        <label for="payNote">Note (optional)</label>
+        <textarea id="payNote" placeholder="e.g. For 12 wedding mandap carpets, order #1042"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="payModalOverlay">Cancel</button>
+      <button class="btn btn-primary" id="paySaveBtn">Save entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sales modal -->
+<div class="modal-overlay" id="saleModalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="saleModalTitle">Add sale</div>
+      <button class="icon-btn" data-close="saleModalOverlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-error" id="saleModalError"></div>
+      <input type="hidden" id="saleId">
+      <div class="field-row">
+        <div class="field">
+          <label for="saleOrderId">Order ID</label>
+          <input id="saleOrderId" placeholder="e.g. ZAA-1042">
+        </div>
+        <div class="field">
+          <label for="saleDate">Date</label>
+          <input id="saleDate" type="date">
+        </div>
+      </div>
+      <div class="field">
+        <label for="saleBuyer">Buyer name</label>
+        <input id="saleBuyer" placeholder="e.g. Sharma Family">
+      </div>
+      <div class="field">
+        <label for="saleCarpet">Carpet / item</label>
+        <input id="saleCarpet" placeholder="e.g. Royal Maroon Wedding Runner">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="saleQty">Quantity</label>
+          <input id="saleQty" type="number" min="1" placeholder="1">
+        </div>
+        <div class="field">
+          <label for="saleAmount">Amount (₹)</label>
+          <input id="saleAmount" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="field">
+        <label for="saleStatus">Status</label>
+        <select id="saleStatus">
+          <option value="delivered">Delivered</option>
+          <option value="processing">Processing</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="saleModalOverlay">Cancel</button>
+      <button class="btn btn-primary" id="saleSaveBtn">Save sale</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg"></span></div>
+
+<script>
+// ===================== FIREBASE STORAGE =====================
+// Each collection lives at its own path in Firebase, with each entry keyed
+// by its id (e.g. /inventory/inv_abc123). This means two people saving at
+// the same time write to different keys and never overwrite each other —
+// no merge logic needed. onValue keeps `state` updated live for everyone.
+const COLLECTIONS = {
+  inventory: 'inventory',
+  payments: 'payments',
+  sales: 'sales',
+};
+
+// Bound once the Firebase module script (in <head>) finishes loading —
+// see waitForFirebase() below. Declared here so functions defined before
+// that point can still close over them correctly.
+let db, ref, set, remove, onValue;
+
+// Module scripts (used to load the Firebase SDK in <head>) execute after
+// this classic script starts running, so anything that touches Firebase
+// has to wait for the 'firebase-ready' event before going further.
+function waitForFirebase() {
+  return new Promise(resolve => {
+    if (window.__firebase) { resolve(window.__firebase); return; }
+    window.addEventListener('firebase-ready', () => resolve(window.__firebase), { once: true });
+  });
+}
+
+// Write a single record under its id.
+async function saveRecord(collection, record) {
+  try {
+    await set(ref(db, `${collection}/${record.id}`), record);
+    return true;
+  } catch (e) {
+    console.error('Firebase save failed', e);
+    return false;
+  }
+}
+
+// Remove a single record by id.
+async function deleteRecord(collection, id) {
+  try {
+    await remove(ref(db, `${collection}/${id}`));
+    return true;
+  } catch (e) {
+    console.error('Firebase delete failed', e);
+    return false;
+  }
+}
+
+// Replace an entire collection at once (used by CSV bulk import).
+// Each row still gets its own key, so this merges with whatever is
+// already there rather than wiping other people's existing entries.
+async function saveManyRecords(collection, records) {
+  try {
+    const updates = {};
+    records.forEach(r => { updates[r.id] = r; });
+    await set(ref(db, collection), Object.assign({}, await currentSnapshot(collection), updates));
+    return true;
+  } catch (e) {
+    console.error('Firebase bulk save failed', e);
+    return false;
+  }
+}
+
+function currentSnapshot(collection) {
+  return new Promise(resolve => {
+    onValue(ref(db, collection), snap => resolve(snap.val() || {}), { onlyOnce: true });
+  });
+}
+
+// Subscribe to a collection; fires immediately with current data, then
+// again any time anyone (including this tab) adds/edits/deletes a record.
+function subscribeCollection(collection, onChange) {
+  onValue(ref(db, collection), snap => {
+    const val = snap.val() || {};
+    onChange(Object.values(val));
+  });
+}
+
+// ===================== STATE =====================
+let state = {
+  inventory: [],
+  payments: [],
+  sales: [],
+};
+
+function uid(prefix) {
+  return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function fmtMoney(n) {
+  const num = Number(n) || 0;
+  return '₹' + num.toLocaleString('en-IN');
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const date = new Date(d + 'T00:00:00');
+  if (isNaN(date)) return d;
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function showToast(msg, isError) {
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMsg');
+  toastMsg.textContent = msg;
+  toast.classList.toggle('error', !!isError);
+  toast.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+// ===================== INIT =====================
+function init() {
+  let loaded = { inventory: false, payments: false, sales: false };
+  function maybeReveal() {
+    if (loaded.inventory && loaded.payments && loaded.sales) {
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('appShell').style.display = 'flex';
+      document.body.classList.add('app-ready');
+    }
+  }
+
+  // Live subscriptions: fire immediately with current data, then again
+  // any time anyone (this tab or anyone else with the link) changes a
+  // record. This is how an entry one person adds becomes visible to
+  // everyone else, in real time, with no manual refresh.
+  subscribeCollection(COLLECTIONS.inventory, items => {
+    state.inventory = items;
+    renderInventory();
+    loaded.inventory = true;
+    maybeReveal();
+  });
+  subscribeCollection(COLLECTIONS.payments, items => {
+    state.payments = items;
+    renderPayments();
+    loaded.payments = true;
+    maybeReveal();
+  });
+  subscribeCollection(COLLECTIONS.sales, items => {
+    state.sales = items;
+    renderSales();
+    loaded.sales = true;
+    maybeReveal();
+  });
+}
+
+// ===================== NAVIGATION =====================
+function switchView(viewName) {
+  document.querySelectorAll('.nav-item, .tab-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === viewName);
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + viewName).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+}
+
+document.querySelectorAll('.nav-item, .tab-item').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+
+// ===================== MODAL HELPERS =====================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  const errEl = document.getElementById(id).querySelector('.modal-error');
+  if (errEl) errEl.classList.remove('show');
+}
+document.querySelectorAll('[data-close]').forEach(el => {
+  el.addEventListener('click', () => closeModal(el.dataset.close));
+});
+document.querySelectorAll('.modal-overlay').forEach(ov => {
+  ov.addEventListener('click', (e) => { if (e.target === ov) closeModal(ov.id); });
+});
+
+function showModalError(modalId, msg) {
+  const el = document.querySelector('#' + modalId + ' .modal-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+/* =========================================================
+   INVENTORY MODULE
+   ========================================================= */
+
+function invStats() {
+  const total = state.inventory.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+  const designs = state.inventory.length;
+  const value = state.inventory.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
+  const lowStock = state.inventory.filter(i => (Number(i.qty) || 0) <= 3).length;
+
+  document.getElementById('invStats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total carpets in stock</div>
+      <div class="stat-value">${total}</div>
+      <div class="stat-detail">${designs} design${designs === 1 ? '' : 's'} listed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Designs listed</div>
+      <div class="stat-value accent-gold">${designs}</div>
+      <div class="stat-detail">unique carpet entries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Low stock</div>
+      <div class="stat-value ${lowStock > 0 ? 'accent-red' : ''}">${lowStock}</div>
+      <div class="stat-detail">${lowStock > 0 ? 'design(s) at ≤3 units' : 'all designs healthy'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Stock value</div>
+      <div class="stat-value">${fmtMoney(value)}</div>
+      <div class="stat-detail">${lowStock > 0 ? lowStock + ' design(s) low (≤3 units)' : 'all designs healthy'}</div>
+    </div>
+  `;
+}
+
+function renderInventory() {
+  invStats();
+  const wrap = document.getElementById('invTableWrap');
+  const warehouseFilter = document.getElementById('invWarehouseFilter').value;
+  const search = document.getElementById('invSearch').value.trim().toLowerCase();
+
+  let rows = state.inventory.filter(i => {
+    const matchWh = warehouseFilter === 'all' || i.warehouse === warehouseFilter;
+    const matchSearch = !search || (i.name || '').toLowerCase().includes(search);
+    return matchWh && matchSearch;
+  });
+
+  rows.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  if (rows.length === 0) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>
+        <div class="empty-state-title">${state.inventory.length === 0 ? 'No carpets added yet' : 'No matches found'}</div>
+        <div class="empty-state-sub">${state.inventory.length === 0 ? 'Add your first carpet or import a CSV to get your stock list started.' : 'Try a different search or warehouse filter.'}</div>
+      </div>`;
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th>Carpet</th><th>Warehouse</th><th>Size</th><th class="right">Qty</th><th class="right">Price/unit</th><th class="right">Value</th><th></th>
+  </tr></thead><tbody>`;
+
+  rows.forEach(i => {
+    const qty = Number(i.qty) || 0;
+    const price = Number(i.price) || 0;
+    const low = qty <= 3;
+    html += `<tr>
+      <td data-label="Carpet"><div class="item-name-cell">
+        <div class="swatch" style="background:${i.color || '#A23B2E'};"></div>
+        <div><div class="item-name">${escapeHtml(i.name || 'Untitled')}</div>${i.size ? '' : ''}</div>
+      </div></td>
+      <td data-label="Warehouse">${escapeHtml(i.warehouse || '—')}</td>
+      <td data-label="Size">${escapeHtml(i.size || '—')}</td>
+      <td class="right nowrap" data-label="Qty">
+        <div class="qty-stepper">
+          <button class="qty-btn" onclick="adjustQty('${i.id}', -1)" ${qty <= 0 ? 'disabled' : ''} aria-label="Decrease quantity">−</button>
+          <span class="qty-value">${low ? '<span class="badge badge-red"><span class="badge-dot"></span>' + qty + '</span>' : qty}</span>
+          <button class="qty-btn" onclick="adjustQty('${i.id}', 1)" aria-label="Increase quantity">+</button>
+        </div>
+      </td>
+      <td class="right mono" data-label="Price/unit">${fmtMoney(price)}</td>
+      <td class="right mono" data-label="Value">${fmtMoney(qty * price)}</td>
+      <td data-label="">
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editInventory('${i.id}')" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+          <button class="icon-btn" onclick="deleteInventory('${i.id}')" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg></button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+document.getElementById('invWarehouseFilter').addEventListener('change', renderInventory);
+document.getElementById('invSearch').addEventListener('input', renderInventory);
+
+document.getElementById('invAddBtn').addEventListener('click', () => {
+  document.getElementById('invModalTitle').textContent = 'Add carpet';
+  document.getElementById('invId').value = '';
+  document.getElementById('invName').value = '';
+  document.getElementById('invWarehouse').value = "Warehouse";
+  document.getElementById('invQty').value = '';
+  document.getElementById('invSize').value = '';
+  document.getElementById('invPrice').value = '';
+  document.getElementById('invColor').value = '#A23B2E';
+  openModal('invModalOverlay');
+});
+
+window.editInventory = function (id) {
+  const item = state.inventory.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('invModalTitle').textContent = 'Edit carpet';
+  document.getElementById('invId').value = item.id;
+  document.getElementById('invName').value = item.name || '';
+  document.getElementById('invWarehouse').value = item.warehouse || "Warehouse";
+  document.getElementById('invQty').value = item.qty || 0;
+  document.getElementById('invSize').value = item.size || '';
+  document.getElementById('invPrice').value = item.price || 0;
+  document.getElementById('invColor').value = item.color || '#A23B2E';
+  openModal('invModalOverlay');
+};
+
+window.adjustQty = async function (id, delta) {
+  const item = state.inventory.find(i => i.id === id);
+  if (!item) return;
+  const newQty = Math.max(0, (Number(item.qty) || 0) + delta);
+  if (newQty === item.qty) return;
+  const ok = await saveRecord(COLLECTIONS.inventory, { ...item, qty: newQty });
+  if (!ok) showToast('Update failed — check connection', true);
+};
+
+window.deleteInventory = async function (id) {
+  if (!confirm('Remove this carpet from inventory?')) return;
+  const ok = await deleteRecord(COLLECTIONS.inventory, id);
+  showToast(ok ? 'Carpet removed' : 'Delete failed — check connection', !ok);
+};
+
+document.getElementById('invSaveBtn').addEventListener('click', async () => {
+  const name = document.getElementById('invName').value.trim();
+  const qty = document.getElementById('invQty').value;
+  if (!name) { showModalError('invModalOverlay', 'Please enter a carpet name.'); return; }
+  if (qty === '' || Number(qty) < 0) { showModalError('invModalOverlay', 'Please enter a valid quantity.'); return; }
+
+  const id = document.getElementById('invId').value;
+  const data = {
+    id: id || uid('inv'),
+    name,
+    warehouse: document.getElementById('invWarehouse').value,
+    qty: Number(qty),
+    size: document.getElementById('invSize').value.trim(),
+    price: Number(document.getElementById('invPrice').value) || 0,
+    color: document.getElementById('invColor').value,
+  };
+
+  const ok = await saveRecord(COLLECTIONS.inventory, data);
+  closeModal('invModalOverlay');
+  showToast(ok ? 'Carpet saved' : 'Save failed — check connection', !ok);
+});
+
+// CSV import — Inventory
+document.getElementById('invImportBtn').addEventListener('click', () => document.getElementById('invCsvInput').click());
+document.getElementById('invCsvInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const rows = parseCsv(text);
+  if (!rows.length) { showToast('CSV appears empty', true); return; }
+
+  const newRecords = [];
+  rows.forEach(r => {
+    const name = r.name || r.carpet || r['carpet name'] || '';
+    if (!name) return;
+    newRecords.push({
+      id: uid('inv'),
+      name: name.trim(),
+      warehouse: normalizeWarehouse(r.warehouse),
+      qty: Number(r.qty || r.quantity || 0),
+      size: (r.size || '').trim(),
+      price: Number(r.price || r['price per unit'] || 0),
+      color: '#A23B2E',
+    });
+  });
+
+  await saveManyRecords(COLLECTIONS.inventory, newRecords);
+  showToast(`Imported ${newRecords.length} carpet${newRecords.length === 1 ? '' : 's'}`);
+  e.target.value = '';
+});
+
+function normalizeWarehouse(v) {
+  return "Warehouse";
+}
+
+/* =========================================================
+   PAYMENTS MODULE
+   ========================================================= */
+
+function getPaymentStatus(p) {
+  const total = Number(p.total) || 0;
+  const received = Number(p.received) || 0;
+  if (received >= total && total > 0) return 'paid';
+  if (received > 0) return 'partial';
+  return 'pending';
+}
+
+function payStats() {
+  const totalDue = state.payments.reduce((s, p) => {
+    const remaining = (Number(p.total) || 0) - (Number(p.received) || 0);
+    return s + Math.max(remaining, 0);
+  }, 0);
+  const totalReceived = state.payments.reduce((s, p) => s + (Number(p.received) || 0), 0);
+  const pendingCount = state.payments.filter(p => getPaymentStatus(p) !== 'paid').length;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const overdue = state.payments.filter(p => {
+    if (getPaymentStatus(p) === 'paid' || !p.due) return false;
+    return new Date(p.due + 'T00:00:00') < today;
+  }).length;
+
+  document.getElementById('payStats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total outstanding</div>
+      <div class="stat-value accent-red">${fmtMoney(totalDue)}</div>
+      <div class="stat-detail">across ${pendingCount} part${pendingCount === 1 ? 'y' : 'ies'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total received</div>
+      <div class="stat-value accent-sage">${fmtMoney(totalReceived)}</div>
+      <div class="stat-detail">from ${state.payments.length} entries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value ${overdue > 0 ? 'accent-red' : ''}">${overdue}</div>
+      <div class="stat-detail">past due date, unpaid</div>
+    </div>
+  `;
+}
+
+function renderPayments() {
+  payStats();
+  const wrap = document.getElementById('payTableWrap');
+  const statusFilter = document.getElementById('payStatusFilter').value;
+  const search = document.getElementById('paySearch').value.trim().toLowerCase();
+
+  let rows = state.payments.filter(p => {
+    const status = getPaymentStatus(p);
+    const matchStatus = statusFilter === 'all' || status === statusFilter;
+    const matchSearch = !search || (p.name || '').toLowerCase().includes(search);
+    return matchStatus && matchSearch;
+  });
+
+  rows.sort((a, b) => {
+    const ra = (Number(a.total)||0) - (Number(a.received)||0);
+    const rb = (Number(b.total)||0) - (Number(b.received)||0);
+    return rb - ra;
+  });
+
+  if (rows.length === 0) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+        <div class="empty-state-title">${state.payments.length === 0 ? 'No payment entries yet' : 'No matches found'}</div>
+        <div class="empty-state-sub">${state.payments.length === 0 ? 'Add a customer entry to start tracking who owes what.' : 'Try a different search or status filter.'}</div>
+      </div>`;
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th>Customer</th><th class="right">Total</th><th class="right">Received</th><th class="right">Remaining</th><th>Due date</th><th>Status</th><th></th>
+  </tr></thead><tbody>`;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  rows.forEach(p => {
+    const total = Number(p.total) || 0;
+    const received = Number(p.received) || 0;
+    const remaining = Math.max(total - received, 0);
+    const status = getPaymentStatus(p);
+    const isOverdue = status !== 'paid' && p.due && new Date(p.due + 'T00:00:00') < today;
+
+    let badge = '';
+    if (status === 'paid') badge = '<span class="badge badge-sage"><span class="badge-dot"></span>Paid</span>';
+    else if (status === 'partial') badge = '<span class="badge badge-gold"><span class="badge-dot"></span>Partial</span>';
+    else badge = '<span class="badge badge-red"><span class="badge-dot"></span>Pending</span>';
+
+    html += `<tr>
+      <td data-label="Customer"><div class="item-name">${escapeHtml(p.name || 'Unnamed')}</div>${p.note ? '<div class="item-meta">' + escapeHtml(p.note) + '</div>' : ''}</td>
+      <td class="right mono" data-label="Total">${fmtMoney(total)}</td>
+      <td class="right mono" data-label="Received">${fmtMoney(received)}</td>
+      <td class="right mono" data-label="Remaining" style="font-weight:600;${remaining > 0 ? 'color:var(--danger);' : ''}">${fmtMoney(remaining)}</td>
+      <td class="nowrap" data-label="Due date">${fmtDate(p.due)}${isOverdue ? ' <span class="badge badge-red" style="margin-left:4px;"><span class="badge-dot"></span>Overdue</span>' : ''}</td>
+      <td data-label="Status">${badge}</td>
+      <td data-label="">
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editPayment('${p.id}')" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+          <button class="icon-btn" onclick="deletePayment('${p.id}')" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg></button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+document.getElementById('payStatusFilter').addEventListener('change', renderPayments);
+document.getElementById('paySearch').addEventListener('input', renderPayments);
+
+document.getElementById('payAddBtn').addEventListener('click', () => {
+  document.getElementById('payModalTitle').textContent = 'Add payment entry';
+  document.getElementById('payId').value = '';
+  document.getElementById('payName').value = '';
+  document.getElementById('payTotal').value = '';
+  document.getElementById('payReceived').value = '';
+  document.getElementById('payDue').value = '';
+  document.getElementById('payPhone').value = '';
+  document.getElementById('payNote').value = '';
+  openModal('payModalOverlay');
+});
+
+window.editPayment = function (id) {
+  const p = state.payments.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('payModalTitle').textContent = 'Edit payment entry';
+  document.getElementById('payId').value = p.id;
+  document.getElementById('payName').value = p.name || '';
+  document.getElementById('payTotal').value = p.total || 0;
+  document.getElementById('payReceived').value = p.received || 0;
+  document.getElementById('payDue').value = p.due || '';
+  document.getElementById('payPhone').value = p.phone || '';
+  document.getElementById('payNote').value = p.note || '';
+  openModal('payModalOverlay');
+};
+
+window.deletePayment = async function (id) {
+  if (!confirm('Remove this payment entry?')) return;
+  const ok = await deleteRecord(COLLECTIONS.payments, id);
+  showToast(ok ? 'Entry removed' : 'Delete failed — check connection', !ok);
+};
+
+document.getElementById('paySaveBtn').addEventListener('click', async () => {
+  const name = document.getElementById('payName').value.trim();
+  const total = document.getElementById('payTotal').value;
+  if (!name) { showModalError('payModalOverlay', 'Please enter a customer name.'); return; }
+  if (total === '' || Number(total) < 0) { showModalError('payModalOverlay', 'Please enter a valid total amount.'); return; }
+
+  const id = document.getElementById('payId').value;
+  const data = {
+    id: id || uid('pay'),
+    name,
+    total: Number(total),
+    received: Number(document.getElementById('payReceived').value) || 0,
+    due: document.getElementById('payDue').value,
+    phone: document.getElementById('payPhone').value.trim(),
+    note: document.getElementById('payNote').value.trim(),
+  };
+
+  const ok = await saveRecord(COLLECTIONS.payments, data);
+  closeModal('payModalOverlay');
+  showToast(ok ? 'Payment entry saved' : 'Save failed — check connection', !ok);
+});
+
+// CSV import — Payments
+document.getElementById('payImportBtn').addEventListener('click', () => document.getElementById('payCsvInput').click());
+document.getElementById('payCsvInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const rows = parseCsv(text);
+  if (!rows.length) { showToast('CSV appears empty', true); return; }
+
+  const newRecords = [];
+  rows.forEach(r => {
+    const name = r.name || r.customer || r['customer name'] || '';
+    if (!name) return;
+    newRecords.push({
+      id: uid('pay'),
+      name: name.trim(),
+      total: Number(r.total || r['total amount'] || 0),
+      received: Number(r.received || r['amount received'] || 0),
+      due: normalizeDate(r.due || r['due date'] || ''),
+      phone: (r.phone || '').trim(),
+      note: (r.note || '').trim(),
+    });
+  });
+
+  await saveManyRecords(COLLECTIONS.payments, newRecords);
+  showToast(`Imported ${newRecords.length} entr${newRecords.length === 1 ? 'y' : 'ies'}`);
+  e.target.value = '';
+});
+
+function normalizeDate(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  if (isNaN(d)) return '';
+  return d.toISOString().slice(0, 10);
+}
+
+/* =========================================================
+   SALES MODULE
+   ========================================================= */
+
+function saleStats() {
+  const totalRevenue = state.sales.filter(s => s.status !== 'cancelled').reduce((s, x) => s + (Number(x.amount) || 0), 0);
+  const delivered = state.sales.filter(s => s.status === 'delivered').length;
+  const processing = state.sales.filter(s => s.status === 'processing').length;
+  const cancelled = state.sales.filter(s => s.status === 'cancelled').length;
+
+  document.getElementById('saleStats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total revenue</div>
+      <div class="stat-value">${fmtMoney(totalRevenue)}</div>
+      <div class="stat-detail">${state.sales.length} order${state.sales.length === 1 ? '' : 's'} total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Delivered</div>
+      <div class="stat-value accent-sage">${delivered}</div>
+      <div class="stat-detail">completed orders</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Processing</div>
+      <div class="stat-value accent-gold">${processing}</div>
+      <div class="stat-detail">in progress</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cancelled</div>
+      <div class="stat-value">${cancelled}</div>
+      <div class="stat-detail">orders cancelled</div>
+    </div>
+  `;
+}
+
+function renderSales() {
+  saleStats();
+  const wrap = document.getElementById('saleTableWrap');
+  const statusFilter = document.getElementById('saleStatusFilter').value;
+  const search = document.getElementById('saleSearch').value.trim().toLowerCase();
+
+  let rows = state.sales.filter(s => {
+    const matchStatus = statusFilter === 'all' || s.status === statusFilter;
+    const hay = ((s.orderId||'') + ' ' + (s.buyer||'') + ' ' + (s.carpet||'')).toLowerCase();
+    const matchSearch = !search || hay.includes(search);
+    return matchStatus && matchSearch;
+  });
+
+  rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  if (rows.length === 0) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+        <div class="empty-state-title">${state.sales.length === 0 ? 'No sales recorded yet' : 'No matches found'}</div>
+        <div class="empty-state-sub">${state.sales.length === 0 ? 'Add your first sale or import a CSV to build your order history.' : 'Try a different search or status filter.'}</div>
+      </div>`;
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th>Order ID</th><th>Date</th><th>Buyer</th><th>Carpet</th><th class="right">Qty</th><th class="right">Amount</th><th>Status</th><th></th>
+  </tr></thead><tbody>`;
+
+  rows.forEach(s => {
+    let badge = '';
+    if (s.status === 'delivered') badge = '<span class="badge badge-sage"><span class="badge-dot"></span>Delivered</span>';
+    else if (s.status === 'processing') badge = '<span class="badge badge-gold"><span class="badge-dot"></span>Processing</span>';
+    else badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Cancelled</span>';
+
+    html += `<tr>
+      <td class="mono" data-label="Order ID">${escapeHtml(s.orderId || '—')}</td>
+      <td class="nowrap" data-label="Date">${fmtDate(s.date)}</td>
+      <td data-label="Buyer">${escapeHtml(s.buyer || '—')}</td>
+      <td data-label="Carpet">${escapeHtml(s.carpet || '—')}</td>
+      <td class="right" data-label="Qty">${s.qty || 1}</td>
+      <td class="right mono" data-label="Amount">${fmtMoney(s.amount)}</td>
+      <td data-label="Status">${badge}</td>
+      <td data-label="">
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editSale('${s.id}')" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+          <button class="icon-btn" onclick="deleteSale('${s.id}')" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg></button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+document.getElementById('saleStatusFilter').addEventListener('change', renderSales);
+document.getElementById('saleSearch').addEventListener('input', renderSales);
+
+document.getElementById('saleAddBtn').addEventListener('click', () => {
+  document.getElementById('saleModalTitle').textContent = 'Add sale';
+  document.getElementById('saleId').value = '';
+  document.getElementById('saleOrderId').value = 'ZAA-' + (1000 + state.sales.length + 1);
+  document.getElementById('saleDate').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('saleBuyer').value = '';
+  document.getElementById('saleCarpet').value = '';
+  document.getElementById('saleQty').value = 1;
+  document.getElementById('saleAmount').value = '';
+  document.getElementById('saleStatus').value = 'processing';
+  openModal('saleModalOverlay');
+});
+
+window.editSale = function (id) {
+  const s = state.sales.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('saleModalTitle').textContent = 'Edit sale';
+  document.getElementById('saleId').value = s.id;
+  document.getElementById('saleOrderId').value = s.orderId || '';
+  document.getElementById('saleDate').value = s.date || '';
+  document.getElementById('saleBuyer').value = s.buyer || '';
+  document.getElementById('saleCarpet').value = s.carpet || '';
+  document.getElementById('saleQty').value = s.qty || 1;
+  document.getElementById('saleAmount').value = s.amount || 0;
+  document.getElementById('saleStatus').value = s.status || 'processing';
+  openModal('saleModalOverlay');
+};
+
+window.deleteSale = async function (id) {
+  if (!confirm('Remove this sale record?')) return;
+  const ok = await deleteRecord(COLLECTIONS.sales, id);
+  showToast(ok ? 'Sale removed' : 'Delete failed — check connection', !ok);
+};
+
+document.getElementById('saleSaveBtn').addEventListener('click', async () => {
+  const buyer = document.getElementById('saleBuyer').value.trim();
+  const amount = document.getElementById('saleAmount').value;
+  if (!buyer) { showModalError('saleModalOverlay', 'Please enter a buyer name.'); return; }
+  if (amount === '' || Number(amount) < 0) { showModalError('saleModalOverlay', 'Please enter a valid amount.'); return; }
+
+  const id = document.getElementById('saleId').value;
+  const data = {
+    id: id || uid('sale'),
+    orderId: document.getElementById('saleOrderId').value.trim() || ('ZAA-' + Date.now().toString().slice(-6)),
+    date: document.getElementById('saleDate').value || new Date().toISOString().slice(0, 10),
+    buyer,
+    carpet: document.getElementById('saleCarpet').value.trim(),
+    qty: Number(document.getElementById('saleQty').value) || 1,
+    amount: Number(amount),
+    status: document.getElementById('saleStatus').value,
+  };
+
+  const ok = await saveRecord(COLLECTIONS.sales, data);
+  closeModal('saleModalOverlay');
+  showToast(ok ? 'Sale saved' : 'Save failed — check connection', !ok);
+});
+
+// CSV import — Sales
+document.getElementById('saleImportBtn').addEventListener('click', () => document.getElementById('saleCsvInput').click());
+document.getElementById('saleCsvInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const rows = parseCsv(text);
+  if (!rows.length) { showToast('CSV appears empty', true); return; }
+
+  const newRecords = [];
+  rows.forEach((r, idx) => {
+    const buyer = r.buyer || r.customer || r['buyer name'] || '';
+    if (!buyer) return;
+    let status = (r.status || 'processing').toLowerCase().trim();
+    if (!['delivered', 'processing', 'cancelled'].includes(status)) status = 'processing';
+    newRecords.push({
+      id: uid('sale'),
+      orderId: r.orderid || r['order id'] || r.order || ('ZAA-' + (1000 + state.sales.length + idx + 1)),
+      date: normalizeDate(r.date) || new Date().toISOString().slice(0, 10),
+      buyer: buyer.trim(),
+      carpet: (r.carpet || r.item || r['carpet name'] || '').trim(),
+      qty: Number(r.qty || r.quantity || 1),
+      amount: Number(r.amount || r.total || 0),
+      status,
+    });
+  });
+
+  await saveManyRecords(COLLECTIONS.sales, newRecords);
+  showToast(`Imported ${newRecords.length} sale${newRecords.length === 1 ? '' : 's'}`);
+  e.target.value = '';
+});
+
+/* =========================================================
+   CSV PARSER (simple, handles quoted fields)
+   ========================================================= */
+function parseCsv(text) {
+  const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim() !== '');
+  if (lines.length < 2) return [];
+
+  function parseLine(line) {
+    const result = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        result.push(cur); cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    result.push(cur);
+    return result.map(s => s.trim());
+  }
+
+  const headers = parseLine(lines[0]).map(h => h.toLowerCase().trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = parseLine(lines[i]);
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = vals[idx] !== undefined ? vals[idx] : ''; });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+// ===================== BOOT =====================
+waitForFirebase().then(fb => {
+  db = fb.db; ref = fb.ref; set = fb.set; remove = fb.remove; onValue = fb.onValue;
+  init();
+});
+
+</script>
+</body>
+</html>
